@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Roulette: Factions Edition 18+</title>
+    <style>
+        body { 
+            background: #0f0f0f; color: #fff; font-family: 'Trebuchet MS', sans-serif; 
+            margin: 0; display: flex; align-items: center; justify-content: center; height: 100vh; overflow: hidden;
+        }
+
+        /* --- СТИЛИ ПРОВЕРКИ ВОЗРАСТА --- */
+        #age-gate {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; z-index: 9999; display: flex; align-items: center; justify-content: center;
+        }
+        .age-box {
+            background: #1a1a1a; padding: 50px; border-radius: 20px; border: 2px solid #c0392b; text-align: center;
+            box-shadow: 0 0 50px rgba(192, 57, 43, 0.4);
+        }
+        .age-box h1 { font-size: 32px; margin-bottom: 30px; }
+        .age-btn {
+            padding: 15px 40px; font-size: 18px; font-weight: bold; border: none; border-radius: 8px;
+            cursor: pointer; margin: 10px; transition: 0.3s; text-transform: uppercase;
+        }
+        .btn-yes { background: #27ae60; color: white; }
+        .btn-no { background: #c0392b; color: white; }
+        .btn-bypass { background: #f1c40f; color: black; }
+
+        /* --- СТИЛИ ОСНОВНОЙ ИГРЫ --- */
+        #main-game { display: none; } /* Скрыто до прохождения проверки */
+
+        .main-layout {
+            display: flex; align-items: center; background: #1a1a1a; padding: 40px;
+            border-radius: 15px; border: 2px solid #333; box-shadow: 0 0 40px rgba(0,0,0,0.8);
+        }
+
+        .sidebar-image { width: 300px; margin-right: 50px; text-align: center; }
+        
+        /* Твоя левитирующая картинка */
+        .sidebar-image img {
+            max-width: 100%; height: auto; border-radius: 10px; border: 2px solid #555;
+            animation: levitation 3s ease-in-out infinite; transition: 0.3s;
+        }
+        .sidebar-image img:hover {
+            animation-play-state: paused; transform: scale(1.05); box-shadow: 0 0 20px rgba(255,255,255,0.2);
+        }
+        @keyframes levitation {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .game-area { display: flex; flex-direction: column; align-items: center; }
+        .balance { font-size: 32px; margin-bottom: 25px; color: #f1c40f; text-shadow: 0 0 10px rgba(241, 196, 15, 0.5); }
+        .roulette-window {
+            position: relative; width: 700px; height: 100px; background: #000;
+            border: 4px solid #444; overflow: hidden; border-radius: 8px;
+        }
+        .pointer {
+            position: absolute; left: 50%; top: 0; bottom: 0; width: 5px;
+            background: #fff; z-index: 10; transform: translateX(-50%); box-shadow: 0 0 15px #fff;
+        }
+        .tape { display: flex; position: absolute; left: 0; top: 0; height: 100%; will-change: transform; }
+        .card {
+            min-width: 80px; height: 100%; display: flex; align-items: center; justify-content: center;
+            font-size: 26px; font-weight: 900; border-right: 1px solid rgba(0,0,0,0.6); box-sizing: border-box;
+        }
+        .red { background: #c0392b; }
+        .black { background: #222; }
+        .green { background: #27ae60; }
+
+        .controls { margin-top: 35px; display: flex; align-items: center; gap: 10px; }
+        input { padding: 15px; font-size: 20px; width: 110px; background: #222; border: 1px solid #555; color: #fff; border-radius: 8px; outline: none; }
+        .game-btn { padding: 15px 25px; font-size: 14px; font-weight: bold; border: none; cursor: pointer; border-radius: 8px; text-transform: uppercase; transition: 0.3s; color: white;}
+        .btn-communist { background: #c0392b; }
+        .btn-nazi { background: #333; border: 1px solid #555; }
+        .btn-ludoman { background: #27ae60; }
+        
+        #status { margin-top: 25px; font-size: 22px; font-weight: bold; min-height: 30px; }
+        .win { color: #2ecc71; }
+        .loss { color: #e74c3c; }
+    </style>
+</head>
+<body>
+
+    <div id="age-gate">
+        <div class="age-box" id="step-1">
+            <h1>ВАМ ЕСТЬ 18 ЛЕТ?</h1>
+            <button class="age-btn btn-yes" onclick="enterSite()">ДА</button>
+            <button class="age-btn btn-no" onclick="showBypass()">НЕТ</button>
+        </div>
+        <div class="age-box" id="step-bypass" style="display:none;">
+            <h1>НИЧЕГО СТРАШНОГО...</h1>
+            <button class="age-btn btn-bypass" onclick="enterSite()">ЗАХОДИ</button>
+        </div>
+    </div>
+
+    <div id="main-game">
+        <div class="main-layout">
+            <div class="sidebar-image">
+                <img src="D:\лиза.png" alt="Mascot">
+            </div>
+
+            <div class="game-area">
+                <div class="balance">КАССА: <span id="balance">5000</span> $</div>
+
+                <div class="roulette-window">
+                    <div class="pointer"></div>
+                    <div id="tape" class="tape"></div>
+                </div>
+
+                <div class="controls">
+                    <input type="number" id="betAmount" value="100">
+                    <button class="game-btn btn-communist" onclick="spin('red')">Коммунисты (x2)</button>
+                    <button class="game-btn btn-ludoman" onclick="spin('green')">Лудоманы (x14)</button>
+                    <button class="game-btn btn-nazi" onclick="spin('black')">Нацисты (x2)</button>
+                </div>
+
+                <div id="status">Выбирай сторону!</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Логика проверки возраста
+        function showBypass() {
+            document.getElementById('step-1').style.display = 'none';
+            document.getElementById('step-bypass').style.display = 'block';
+        }
+
+        function enterSite() {
+            document.getElementById('age-gate').style.display = 'none';
+            document.getElementById('main-game').style.display = 'flex';
+            init(); // Инициализация рулетки
+        }
+
+        // Логика рулетки
+        const numbers = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26];
+        const tape = document.getElementById('tape');
+        const cardWidth = 80;
+        let balance = 5000;
+        let isSpinning = false;
+
+        function getFaction(n) {
+            if (n === 0) return { id: 'green', name: 'Лудоманы' };
+            const isRed = [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36].includes(n);
+            return isRed ? { id: 'red', name: 'Коммунисты' } : { id: 'black', name: 'Нацисты' };
+        }
+
+        function init() {
+            tape.innerHTML = '';
+            for (let i = 0; i < 200; i++) {
+                const n = numbers[i % numbers.length];
+                const faction = getFaction(n);
+                const div = document.createElement('div');
+                div.className = `card ${faction.id}`;
+                div.innerText = n;
+                tape.appendChild(div);
+            }
+        }
+
+        function spin(betColor) {
+            if (isSpinning) return;
+            const bet = parseInt(document.getElementById('betAmount').value);
+            if (bet > balance || bet <= 0) {
+                alert("Денег нет, но вы держитесь!");
+                return;
+            }
+
+            isSpinning = true;
+            const statusLabel = document.getElementById('status');
+            statusLabel.className = '';
+            statusLabel.innerText = "История вершится...";
+
+            tape.style.transition = "none";
+            tape.style.transform = "translateX(0px)";
+            tape.offsetHeight; 
+
+            const targetIdx = 130 + Math.floor(Math.random() * 30);
+            const offset = (targetIdx * cardWidth) - (350 - cardWidth / 2);
+
+            tape.style.transition = "transform 7s cubic-bezier(0.1, 0, 0, 1)";
+            tape.style.transform = `translateX(-${offset}px)`;
+
+            setTimeout(() => {
+                const winNum = numbers[targetIdx % numbers.length];
+                const faction = getFaction(winNum);
+
+                if (faction.id === betColor) {
+                    const mult = (faction.id === 'green') ? 14 : 2;
+                    balance += (bet * mult) - bet;
+                    statusLabel.innerText = `📈 Победили ${faction.name}! (+${bet * mult}$)`;
+                    statusLabel.className = 'win';
+                } else {
+                    balance -= bet;
+                    statusLabel.innerText = `📉 Выпали ${faction.name}. Ты в минусе.`;
+                    statusLabel.className = 'loss';
+                }
+
+                document.getElementById('balance').innerText = balance;
+                isSpinning = false;
+            }, 7100);
+        }
+    </script>
+</body>
+</html>
